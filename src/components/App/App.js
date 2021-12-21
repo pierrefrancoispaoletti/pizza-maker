@@ -1,98 +1,29 @@
 import React, { useEffect, useState } from "react";
+import { Route, Routes } from "react-router-dom";
 import { Cheeses } from "../../assets/images/cheeses/cheeses";
 import { Sauces } from "../../assets/images/sauces/sauces";
 import { Toppings } from "../../assets/images/toppings/toppings";
-import Addtocartbutton from "../AddToCartButton/AddToCartButton";
-import CartDropdown from "../CartDropdown/CartDropdown";
-import CurrentIngredients from "../CurrentIngrédients/CurrentIngredients";
+import Home from "../../pages/Home";
 import Header from "../Header/Header";
-import IngredientSelector from "../IngredientSelector/IngredientSelector";
-import Pizzaeditor from "../PizzaEditor/PizzaEditor";
+import CartDropdown from "../CartDropdown/CartDropdown";
 import { AppContainer } from "./app.style";
+import Checkout from "../../pages/Checkout";
 
 const App = () => {
   const [sauces, setSauces] = useState([]);
   const [toppings, setToppings] = useState([]);
   const [cheeses, setCheeses] = useState([]);
-  const [currentPizza, setCurrentPizza] = useState([]);
+
   const [open, setOpen] = useState(false);
   const [cart, setCart] = useState([]);
+
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     setSauces([...Sauces]);
     setToppings([...Toppings]);
     setCheeses([...Cheeses]);
   }, []);
-
-  useEffect(() => {
-    setCurrentPizza(
-      [...sauces, ...toppings, ...cheeses].flat().filter((item) => item.visible)
-    );
-  }, [sauces, toppings, cheeses]);
-
-  let price = currentPizza.reduce((acc, amt) => acc + amt.price, 9);
-
-  const changeSauce = (index) => {
-    //ici on ne peut selectioner qu'une seule sauce
-    let newArr = [...sauces];
-    newArr.map((o) => (o.visible = false));
-    newArr[index]["visible"] = !sauces[index]["visible"];
-    setSauces([...newArr]);
-  };
-
-  const changeIngredient = (index) => {
-    let newArr = [...toppings];
-    newArr[index]["visible"] = !toppings[index]["visible"];
-    setToppings([...newArr]);
-  };
-
-  const changeCheese = (index) => {
-    let newArr = [...cheeses];
-    newArr[index]["visible"] = !cheeses[index]["visible"];
-    setCheeses([...newArr]);
-  };
-
-  const handleRemoveIngredient = (ingredient) => {
-    const itemIndex = currentPizza.indexOf(ingredient);
-    const toppingIndex = toppings.indexOf(ingredient);
-    const sauceIndex = sauces.indexOf(ingredient);
-    const cheeseIndex = cheeses.indexOf(ingredient);
-    if (toppingIndex !== -1) {
-      changeIngredient(toppingIndex);
-    }
-    if (cheeseIndex !== -1) {
-      changeCheese(cheeseIndex);
-    }
-    if (sauceIndex !== -1) {
-      changeSauce(sauceIndex);
-    }
-    const newArray = [...currentPizza];
-    newArray.splice(itemIndex, 1);
-    setCurrentPizza(newArray);
-  };
-
-  const handleAddToCart = () => {
-    const newPizza = {
-      title: `Ma pizza #${cart.length + 1}`,
-      ingredients: currentPizza.map((ingredients) => ingredients),
-      price: price,
-      quantity: 1,
-    };
-
-    let index = cart.findIndex(
-      (item) =>
-        JSON.stringify(item.ingredients) ===
-        JSON.stringify(newPizza.ingredients)
-    );
-
-    if (index !== -1) {
-      let newCart = [...cart];
-      newCart[index]["quantity"] += 1;
-      setCart([...newCart]);
-    } else {
-      setCart([...cart, newPizza]);
-    }
-  };
 
   const updateQuantity = (item, operation) => {
     let newCart = [...cart];
@@ -117,20 +48,33 @@ const App = () => {
   };
   return (
     <AppContainer>
+      {message}
       <Header setOpen={setOpen} open={open} cart={cart} />
       <CartDropdown open={open} cart={cart} updateQuantity={updateQuantity} />
-      <Pizzaeditor sauces={sauces} toppings={toppings} cheeses={cheeses} />
-      {currentPizza.length > 0 && (
-        <Addtocartbutton handleAddToCart={handleAddToCart} />
-      )}
-      <CurrentIngredients
-        currentPizza={currentPizza}
-        handleRemoveIngredient={handleRemoveIngredient}
-        price={price}
-      />
-      <IngredientSelector array={sauces} func={changeSauce} />
-      <IngredientSelector array={cheeses} func={changeCheese} />
-      <IngredientSelector array={toppings} func={changeIngredient} />
+      <Routes>
+        <Route
+          exact
+          path="/"
+          element={
+            <Home
+              sauces={sauces}
+              toppings={toppings}
+              cheeses={cheeses}
+              setToppings={setToppings}
+              setCheeses={setCheeses}
+              setSauces={setSauces}
+              cart={cart}
+              setCart={setCart}
+            />
+          }
+        />
+        <Route
+          path="/paiement"
+          element={
+            <Checkout cart={cart} setCart={setCart} setMessage={setMessage} />
+          }
+        />
+      </Routes>
     </AppContainer>
   );
 };
